@@ -1,0 +1,25 @@
+steps:
+  # Build our Go Application
+  - name: 'gcr.io/cloud-builders/go'
+    args: ['build', '-o', 'server', '.']
+    env: ['PROJECT_NAME=main']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/ta-chitchat-backend/chronicles-server', '.']
+
+  # Push the Container to Google Container Registry
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args: ['apply', '-f', 'deployment.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-eastern5-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=chronicle-cluster'
+
+  # Apply the Kubernetes Service
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args: ['apply', '-f', 'service.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-eastern5-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=chronicle-cluster'
+
+images:
+  - 'gcr.io/ta-chitchat-backend/chronicles-server'

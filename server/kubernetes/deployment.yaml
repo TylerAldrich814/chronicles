@@ -1,0 +1,20 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: chronicles-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chronicles-server
+  template:
+    metadata:
+      labels:
+        app: chronicles-server
+    spec:
+      containers:
+      - name: chronicles-server
+        image: gcr.io/ta-chitchat-backend/chronicles-server:v1
+        ports:
+        - containerPort: 8080
+

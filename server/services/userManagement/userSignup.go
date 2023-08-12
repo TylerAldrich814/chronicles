@@ -1,20 +1,25 @@
-package chronAuthentication
+package userManagement
 
-import (
-	"encoding/json"
+import ( "encoding/json"
 	"log"
 	"net/http"
 
 	"firebase.google.com/go/auth"
 	"github.com/google/uuid"
+	chronAuthentication "github.com/TylerAldrich814/Chronicles/services/authentication"
 )
 
 func handleUserSignup(w http.ResponseWriter, r *http.Request){
-  fb := FirebaseAuth{}
+  fb := chronAuthentication.FirebaseAuth{}
   fb.Init().GetClient()
 
-  email := r.URL.Query().Get("email")
-  passw := r.URL.Query().Get("password")
+  if err := r.ParseForm(); err != nil {
+    http.Error(w, "Failed to Parse Form Data", http.StatusBadRequest)
+  }
+
+  email := r.FormValue("email")
+  passw := r.FormValue("password")
+
   uid := func() *uuid.UUID{
     reties := 5
     for retry := 1; retry <= reties; retry++ {
@@ -36,12 +41,9 @@ func handleUserSignup(w http.ResponseWriter, r *http.Request){
   }
 
   user := auth.UserToCreate{}
-  user.
-    Email(email).
-    Password(passw).
-    UID(uid.String())
+  user.Email(email).Password(passw).UID(uid.String())
 
-  record, err := fb.client.CreateUser(fb.ctx, &user)
+  record, err := fb.CreateUser(&user)
   if err != nil {
     log.Printf(
       " --> ERROR: Failed to Create user\n  -> Error: %v",
@@ -68,4 +70,5 @@ func handleUserSignup(w http.ResponseWriter, r *http.Request){
       err.Error(),
     )
   }
+  log.Printf("Successfully Created User %v\n", email)
 }

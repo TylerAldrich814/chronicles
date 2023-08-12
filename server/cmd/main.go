@@ -10,6 +10,8 @@ import (
 	"github.com/TylerAldrich814/Chronicles/clientManagement"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"github.com/TylerAldrich814/Chronicles/services/userManagement"
 )
 var upgrader = websocket.Upgrader{
   ReadBufferSize:  1024,
@@ -41,5 +43,5 @@ func signupHandler(w http.ResponseWriter, r *http.Request){
 
 func main(){
   r := mux.NewRouter()
-  r.HandleFunc("/signup", signupHandler).Methods("POST")
+  userManagement.UserManagementRoutes(r)
 }

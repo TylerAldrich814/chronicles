@@ -29,6 +29,7 @@ func( fb *FirebaseAuth )Init() *FirebaseAuth{
   ctx := context.Background()
   fb.ctx = ctx
   opt := option.WithCredentialsJSON([]byte(credentials))
+
   config := &firebase.Config{ProjectID: PROJECTID}
   app, err := firebase.NewApp(fb.ctx, config, opt)
   if err != nil {
@@ -44,11 +45,27 @@ func( fb *FirebaseAuth )Init() *FirebaseAuth{
 func( fb *FirebaseAuth )GetClient() *FirebaseAuth{
   client, err := fb.app.Auth(fb.ctx)
   if err != nil {
-    log.Fatal(
+    log.Fatalf(
       " --> FATAL: Failed to create Firebase App Authentication\n  -> Error: %v",
       err.Error(),
     )
   }
   fb.client = client
   return fb
+}
+
+func( fb *FirebaseAuth )CreateUser(
+  user *auth.UserToCreate,
+)(*auth.UserRecord, error ){
+  return fb.client.CreateUser(fb.ctx, user)
+}
+
+func( fb *FirebaseAuth )GetUser(
+  email string,
+)( *auth.UserRecord,error ){
+  return fb.client.GetUserByEmail(fb.ctx, email)
+}
+
+func( fb *FirebaseAuth )DeleteUser(email string) error {
+  return fb.client.DeleteUser(fb.ctx, email)
 }

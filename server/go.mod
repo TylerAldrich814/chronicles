@@ -13,6 +13,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230807174057-1744710a1577
 )
 
+
 require (
 	cloud.google.com/go v0.110.7 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect
@@ -45,3 +46,4 @@ require (
 	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 )
+

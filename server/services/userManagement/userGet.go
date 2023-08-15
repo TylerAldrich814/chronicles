@@ -25,7 +25,6 @@ func handleUserGet(w http.ResponseWriter, r *http.Request){
     http.Error(w, "Failed to Get User Email", http.StatusInternalServerError)
     return
   }
-
   email := r.FormValue("email")
 
   user, err := fb.GetUser(email)

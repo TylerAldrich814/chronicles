@@ -6,10 +6,10 @@ import (
 	"cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
+const _FIREBASE_SECRET string = "projects/ta-chitchat-backend/secrets/Chronicles_Firebase_Authentication/versions/latest"
+const _GCS_SECRET      string = "projects/ta-chitchat-backend/secrets/chronicle-gcs-credentials/versions/latest"
 
-const SECRETNAME string = "projects/ta-chitchat-backend/secrets/Chronicles_Firebase_Authentication/versions/1"
-
-func accessSecretVersion(secretName string)( string, error ){
+func accessSecretVersion(secretName string)( []byte, error ){
   ctx := context.Background()
   client, err := secretmanager.NewClient(ctx)
   if err != nil {
@@ -17,7 +17,7 @@ func accessSecretVersion(secretName string)( string, error ){
       " --> Failed to create new SecretManager Client\n  -> Error: %v",
       err.Error(),
     )
-    return "", err
+    return nil, err
   }
   defer client.Close()
 
@@ -30,17 +30,26 @@ func accessSecretVersion(secretName string)( string, error ){
       " --> Failed to Access Secret\n  -> Error: %v",
       err.Error(),
     )
-    return "", err
+    return nil, err
   }
 
-  return string(result.Payload.Data), err
+  return result.Payload.Data, err
+}
+
+func GCSAuthCredentials()( []byte, error ){
+  credentials, err := accessSecretVersion(_GCS_SECRET)
+  if err != nil {
+    log.Printf(" --> Failed to obtain GCS Secret Credentials\n --> Error %v\n", err.Error())
+    return nil, err
+  }
+  return credentials, nil
 }
 
 func FirebaseAuthCredentials()( []byte, error ){
-  credentials, err := accessSecretVersion(SECRETNAME)
+  credentials, err := accessSecretVersion(_FIREBASE_SECRET)
   if err != nil {
     return nil, err
   }
 
-  return []byte(credentials), nil
+  return credentials, nil
 }

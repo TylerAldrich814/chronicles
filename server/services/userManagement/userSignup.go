@@ -1,69 +1,53 @@
 package userManagement
 
-import ( "encoding/json"
+import (
 	"log"
 	"net/http"
 
-	"firebase.google.com/go/auth"
-	"github.com/google/uuid"
 	chronAuthentication "github.com/TylerAldrich814/Chronicles/services/authentication"
+	"github.com/TylerAldrich814/Chronicles/services/httpResponses"
 )
+const BUCKET_NAME string = "chronicles_users"
+const COLLECTION string = "users"
 
+// '/signup' PUT HTTP Endpoint. Handles signing a user up using
+// both Firebase Auth and stores User metadata with FireStore
 func handleUserSignup(w http.ResponseWriter, r *http.Request){
   fb := chronAuthentication.FirebaseAuth{}
   fb.Init().GetClient()
+  resp := httpResponses.Response{}
 
   if err := r.ParseForm(); err != nil {
     http.Error(w, "Failed to Parse Form Data", http.StatusBadRequest)
   }
 
-  email := r.FormValue("email")
-  passw := r.FormValue("password")
+  email    := r.FormValue("email")
+  username := r.FormValue("userName")
+  passw    := r.FormValue("password")
 
-  uid := func() *uuid.UUID{
-    reties := 5
-    for retry := 1; retry <= reties; retry++ {
-      uid, err := uuid.NewUUID()
-      if err != nil {
-        log.Printf(
-          " --> Warn: Failed to create UUID, %v trys left\n  -> Error: %v",
-          reties - retry, err.Error(),
-        )
-      }
-      return &uid
-    }
-    log.Fatal(" --> FATAL: Failed to create UUID")
-    return nil
-  }()
-  if uid == nil {
-    http.Error(w, "Failed to create User UUID, Please try again", http.StatusInternalServerError)
+  if len(email) == 0 || len(username) == 0 || len(passw) == 0 {
+    http.Error(w, "Email, UserName or Password were missing", http.StatusNotAcceptable)
     return
   }
 
-  user := auth.UserToCreate{}
-  user.Email(email).Password(passw).UID(uid.String())
-
-  record, err := fb.CreateUser(&user)
-  if err != nil {
-    log.Printf(
-      " --> ERROR: Failed to Create user\n  -> Error: %v",
-      err.Error(),
-    )
+  if err := createUserMetadata(email, username); err != nil {
+    http.Error(w, "Failed to add user metadata to Google Cloud", http.StatusInternalServerError)
   }
 
-  recordJson, err := json.Marshal(record)
+  _, err := fb.CreateUser(email, passw)
   if err != nil {
-    log.Printf(
-      " --> Error: Failed to Marshal User Record\n  -> Error: %v",
-      err.Error(),
-    )
-    http.Error(w, "Failed to Marshal User Record", http.StatusInternalServerError)
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  response, err := resp.AddStatus("Successful").AddStatusCode(200).Build()
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
 
   w.Header().Set("Content-Type", "application/json")
   w.WriteHeader(http.StatusCreated)
-  _, writeErr := w.Write(recordJson)
+  _, writeErr := w.Write(response)
   if writeErr != nil {
     log.Printf(
       " --> ERROR: Failed to write JSON Response\n  -> Error: %v",
@@ -71,4 +55,28 @@ func handleUserSignup(w http.ResponseWriter, r *http.Request){
     )
   }
   log.Printf("Successfully Created User %v\n", email)
+}
+
+func createUserMetadata(email, userName string) error {
+  fb := chronAuthentication.FirebaseAuth{}
+  fb.Init().GetClient()
+
+  fields := map[string]interface{}{
+    "Email":       email,
+    "OwnedRooms":  make(map[string]string),
+    "JoinedRooms": make(map[string]string),
+  }
+
+  if err := fb.AddFirestoreDoc(COLLECTION, userName, fields); err != nil {
+    log.Printf(" --> ERROR: Failed to Save user to Firestore\n  -> Error: %v\n", err.Error())
+    return err
+  }
+
+  return nil
+}
+
+func CHECKOWNERSHIP(){
+  // GET users/*UID/profile.json
+  // GET rooms/name/metadata/ownership.json
+  // if user.UID == room.owner.uid { return tru }
 }
